@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
+from pydantic import ValidationError
 
 from app.db.database import get_db
 from app.db.models import User
@@ -12,9 +13,34 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(login_data: LoginRequest, db: Session = Depends(get_db)):
-    """Authenticate user with email and password, returning JWT access token."""
-    user = authenticate_user(db, login_data.email, login_data.password)
+async def login(request: Request, db: Session = Depends(get_db)):
+    """Authenticate user with email and password, returning JWT access token.
+    Accepts both JSON body and Form data (for Swagger OAuth2).
+    """
+    content_type = request.headers.get("content-type", "")
+    if "application/x-www-form-urlencoded" in content_type:
+        form = await request.form()
+        email = form.get("username") or form.get("email")
+        password = form.get("password")
+    else:
+        try:
+            body = await request.json()
+            login_data = LoginRequest.model_validate(body)
+            email = login_data.email
+            password = login_data.password
+        except (ValidationError, Exception):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid login request payload. 'email' and 'password' are required.",
+            )
+
+    if not email or not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email and password are required.",
+        )
+
+    user = authenticate_user(db, str(email).strip(), str(password).strip())
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

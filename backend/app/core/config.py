@@ -19,9 +19,13 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
 
-    # AI Integration (OpenRouter)
-    OPENROUTER_API_KEY: str = ""
-    OPENROUTER_MODEL: str = "anthropic/claude-3.5-sonnet"
+    # AI Integration - Primary Provider (Google Gemini API directly)
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
+
+    # AI Integration - Fallback Provider (Groq API directly)
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "openai/gpt-oss-20b"
 
     @property
     def cors_origins(self) -> List[str]:

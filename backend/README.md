@@ -189,6 +189,111 @@ All accounts use password: `Demo123!`
 - `GET /api/tasks/{task_id}` - Single task lookup (404 on unauthorized)
 - `POST /api/tasks` - Task creation (Admin only)
 
-### Transcripts
+### Transcripts & AI Automation
 
-- `POST /api/transcripts/process` - Stub ready for OpenRouter AI processing (Admin only)
+- `POST /api/transcripts/process` - AI-powered transcript ingestion and project/task creation (Admin only)
+
+---
+
+## AI Providers & Architecture
+
+NovaWorks AI Project Manager uses a multi-provider strategy for automated project plan extraction from meeting transcripts.
+
+### Primary Provider: Google Gemini
+
+- **Model**: `gemini-3.5-flash-lite`
+- **SDK**: `google-genai` (direct official SDK, no intermediary frameworks)
+- **Structured Output**: Native Gemini JSON schema generation via `response_schema`
+
+### Fallback Provider: Groq
+
+- **Model**: `openai/gpt-oss-20b`
+- **SDK**: `groq` (official SDK)
+- **Structured Output**: Strict JSON Schema mode (`json_schema` with `strict: True`, `additionalProperties: false`, and required fields)
+
+### Fallback Conditions
+
+Groq is used **only** when Gemini encounters transient provider infrastructure failures:
+
+- HTTP 503 (Service Unavailable / Overloaded)
+- HTTP 429 (Rate Limit / Quota Exceeded)
+- Request timeouts
+- Network / connection dropped
+
+Groq is **never** invoked for data/application issues:
+
+- Invalid or unparseable input transcripts
+- Pydantic schema validation failures from generated response
+- Business rule validation errors (e.g., manager is not a MANAGER, deadline in the past)
+
+If both providers encounter transient unavailability, the API returns a clean frontend-safe message:
+
+```json
+{
+  "detail": "AI providers are temporarily unavailable. Please try again."
+}
+```
+
+No API keys, credentials, or stack traces are ever exposed.
+
+### Environment Configuration
+
+Configure the following variables in `.env` (never commit real secrets):
+
+```env
+# AI Integration - Primary Provider (Google Gemini)
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.5-flash-lite
+
+# AI Integration - Fallback Provider (Groq)
+GROQ_API_KEY=
+GROQ_MODEL=openai/gpt-oss-20b
+```
+
+### Team Directory Privacy & Security
+
+Before sending team context to Gemini or Groq, the team directory is strictly sanitized to:
+
+- `id`, `name`, `role`, `specialization`, `skills`
+- Password hashes, JWT tokens, emails, and credentials are **never** included in AI prompts.
+
+---
+
+## Testing
+
+### Deterministic Test Suite (Mocked & Fast)
+
+Runs completely offline without consuming API quota:
+
+```bash
+python backend/tests/test_transcript.py
+```
+
+Covers:
+
+- Gemini success -> Groq is NOT called
+- Gemini 503 / 429 / timeout / connection failure -> Groq fallback IS called
+- Gemini success with invalid data -> does NOT fallback to Groq
+- Gemini failure + Groq failure -> clean 503 error
+- Sanitized directory privacy (no password/hash leakage)
+- Role authorization (Admin required) & business constraint validations
+
+### RBAC Test Suite
+
+```bash
+python backend/tests/test_rbac.py
+```
+
+### Live AI Provider Verification
+
+Requires valid `GEMINI_API_KEY` and `GROQ_API_KEY` in `.env`:
+
+```bash
+python backend/tests/test_real_ai.py
+```
+
+Validates:
+
+1. Gemini direct structured extraction on the official challenge transcript
+2. Groq direct strict JSON schema extraction
+3. Simulated Gemini 503 fallback routing to Groq, verifying atomic database persistence
