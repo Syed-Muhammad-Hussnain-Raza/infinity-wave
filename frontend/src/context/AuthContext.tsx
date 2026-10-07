@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export type Role = 'ADMIN' | 'MANAGER' | 'AGENT';
@@ -34,17 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Mock API delay to simulate backend auth
       await new Promise(res => setTimeout(res, 800));
-      
+
       let role: Role = 'AGENT';
       let name = 'Agent';
       if (email.startsWith('admin')) { role = 'ADMIN'; name = 'Admin'; }
       else if (email.startsWith('ayesha') || email.startsWith('bilal') || email.startsWith('hina')) { role = 'MANAGER'; name = 'Manager'; }
       else if (email === 'fail@test.com') throw new Error('Invalid credentials');
-      
+
       const mockUser = { id: '1', name, email, role };
       setUser(mockUser);
       setToken('mock_token_123'); // Store securely in production
-      
+
       // Route dynamically based on role
       if (role === 'ADMIN') navigate('/admin');
       else if (role === 'MANAGER') navigate('/manager');

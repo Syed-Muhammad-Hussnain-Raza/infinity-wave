@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bot, FileText, CheckCircle2, ArrowRight, Loader2, FolderKanban } from 'lucide-react';
+import { Bot, FileText, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
 import { transcriptService } from '../../services/api';
 
 export default function CreateTranscript() {
