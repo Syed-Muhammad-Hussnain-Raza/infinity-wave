@@ -1,15 +1,10 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService, api } from '../services/api';
+import axios from 'axios';
+import { authService } from '../services/api';
+import type { User, Role } from '../types';
 
-export type Role = 'ADMIN' | 'MANAGER' | 'AGENT';
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-}
+export type { User, Role };
 
 interface AuthContextType {
   user: User | null;
@@ -36,8 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      try {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
     setIsInitializing(false);
   }, []);
@@ -59,8 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (returnedUser.role === 'ADMIN') navigate('/admin');
       else if (returnedUser.role === 'MANAGER') navigate('/manager');
       else navigate('/my-tasks');
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Invalid credentials. Please try again.';
+    } catch (err: unknown) {
+      let msg = 'Invalid credentials. Please try again.';
+      if (axios.isAxiosError(err) && err.response?.data?.detail) {
+        msg = err.response.data.detail;
+      }
       setError(msg);
     } finally {
       setIsLoading(false);

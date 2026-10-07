@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { projectService, userService } from '../../services/api';
+import type { Project, User } from '../../types';
 
 export default function AdminDashboard() {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([projectService.getAll(), userService.getAll()])
-      .then(([p, u]) => { setProjects(Array.isArray(p) ? p : []); setUsers(Array.isArray(u) ? u : []); })
+      .then(([p, u]) => {
+        setProjects(Array.isArray(p) ? p : []);
+        setUsers(Array.isArray(u) ? u : []);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -78,13 +82,13 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {projects.slice(0, 5).map((p: any) => (
+              {projects.slice(0, 5).map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3 font-medium text-gray-900">
                     <Link to={`/projects/${p.id}`} className="hover:text-indigo-600">{p.name}</Link>
                   </td>
-                  <td className="px-5 py-3 text-gray-600">{p.client || '—'}</td>
-                  <td className="px-5 py-3 text-gray-600">{p.manager?.name || p.manager || '—'}</td>
+                  <td className="px-5 py-3 text-gray-600">{p.client_name || '—'}</td>
+                  <td className="px-5 py-3 text-gray-600">{p.manager?.name || '—'}</td>
                   <td className="px-5 py-3 text-gray-600">{p.deadline || '—'}</td>
                   <td className="px-5 py-3 text-right">
                     <span className="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded">{p.task_count ?? 0}</span>

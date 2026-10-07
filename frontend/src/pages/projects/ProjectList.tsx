@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { projectService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import type { Project } from '../../types';
 
 export default function ProjectList({ title = 'All Projects' }: { title?: string }) {
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     projectService.getAll()
@@ -44,22 +47,24 @@ export default function ProjectList({ title = 'All Projects' }: { title?: string
         ) : projects.length === 0 ? (
           <div className="px-5 py-12 text-center">
             <p className="text-gray-600 font-medium mb-1">No projects found</p>
-            <p className="text-gray-400 text-sm">Generate projects from a meeting transcript first.</p>
-            <Link to="/admin/transcript" className="inline-block mt-4 bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-indigo-700 transition-colors">
-              Create from Transcript →
-            </Link>
+            <p className="text-gray-400 text-sm">No projects currently available.</p>
+            {user?.role === 'ADMIN' && (
+              <Link to="/admin/transcript" className="inline-block mt-4 bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-indigo-700 transition-colors">
+                Create from Transcript →
+              </Link>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {projects.map((p: any) => (
+            {projects.map((p) => (
               <Link
                 key={p.id}
                 to={`/projects/${p.id}`}
                 className="grid grid-cols-12 gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors items-center"
               >
                 <div className="col-span-4 font-medium text-gray-900 hover:text-indigo-600 truncate">{p.name}</div>
-                <div className="col-span-2 text-gray-600 text-sm truncate">{p.client || '—'}</div>
-                <div className="col-span-3 text-gray-600 text-sm truncate">{p.manager?.name || p.manager || '—'}</div>
+                <div className="col-span-2 text-gray-600 text-sm truncate">{p.client_name || '—'}</div>
+                <div className="col-span-3 text-gray-600 text-sm truncate">{p.manager?.name || '—'}</div>
                 <div className="col-span-2 text-gray-600 text-sm">{p.deadline || '—'}</div>
                 <div className="col-span-1 text-right">
                   <span className="text-xs font-semibold bg-indigo-50 text-indigo-700 px-2 py-1 rounded">{p.task_count ?? 0}</span>

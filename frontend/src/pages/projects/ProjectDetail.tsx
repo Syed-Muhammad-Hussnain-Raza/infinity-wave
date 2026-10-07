@@ -1,15 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { projectService } from '../../services/api';
+import type { Project } from '../../types';
 
 export default function ProjectDetail() {
-  const { id } = useParams();
-  const [project, setProject] = useState<any>(null);
+  const { id } = useParams<{ id: string }>();
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (id) projectService.getById(id).then(setProject).catch(() => setError('Project not found.')).finally(() => setLoading(false));
+    if (id) {
+      projectService.getById(id)
+        .then(setProject)
+        .catch(() => setError('Project not found.'))
+        .finally(() => setLoading(false));
+    }
   }, [id]);
 
   if (loading) return <div className="text-gray-500 py-8 text-sm text-center">Loading project...</div>;
@@ -17,7 +23,7 @@ export default function ProjectDetail() {
   if (!project) return null;
 
   const tasks = project.tasks || [];
-  const managerName = project.manager?.name || project.manager || '—';
+  const managerName = project.manager?.name || '—';
 
   return (
     <div>
@@ -33,7 +39,7 @@ export default function ProjectDetail() {
         <div className="flex items-start justify-between mb-4">
           <div>
             <h1 className="text-lg font-semibold text-gray-900">{project.name}</h1>
-            {project.client && <p className="text-gray-500 text-sm mt-0.5">{project.client}</p>}
+            {project.client_name && <p className="text-gray-500 text-sm mt-0.5">{project.client_name}</p>}
           </div>
           <span className="text-xs font-semibold bg-green-100 text-green-700 px-2.5 py-1 rounded border border-green-200">Active</span>
         </div>
@@ -77,8 +83,8 @@ export default function ProjectDetail() {
               <div className="col-span-1"></div>
             </div>
             <div className="divide-y divide-gray-100">
-              {tasks.map((t: any) => {
-                const agentName = t.assigned_to?.name || t.assigned_to || t.assignedTo || '—';
+              {tasks.map((t) => {
+                const agentName = t.assignee?.name || '—';
                 return (
                   <div key={t.id} className="grid grid-cols-12 gap-4 px-5 py-3.5 hover:bg-gray-50 items-start">
                     <div className="col-span-4">
@@ -88,7 +94,9 @@ export default function ProjectDetail() {
                     <div className="col-span-3 text-sm text-gray-600">{agentName}</div>
                     <div className="col-span-2 text-sm text-gray-600">{t.deadline || '—'}</div>
                     <div className="col-span-2 text-right">
-                      <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{t.estimated_hours ?? t.estimatedHours ?? '—'}h</span>
+                      <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                        {t.estimated_hours != null ? `${t.estimated_hours}h` : '—'}
+                      </span>
                     </div>
                     <div className="col-span-1"></div>
                   </div>

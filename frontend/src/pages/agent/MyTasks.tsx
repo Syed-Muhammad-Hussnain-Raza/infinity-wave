@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { taskService } from '../../services/api';
+import type { Task } from '../../types';
 
 export default function MyTasks() {
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,9 +46,9 @@ export default function MyTasks() {
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {tasks.map((t: any) => {
-              const projectName = t.project_name || t.projectName || '—';
-              const hours = t.estimated_hours ?? t.estimatedHours ?? '—';
+            {tasks.map((t) => {
+              const projectName = t.project_name || '—';
+              const hours = t.estimated_hours != null ? `${t.estimated_hours}h` : '—';
               return (
                 <div key={t.id} className="grid grid-cols-12 gap-4 px-5 py-3.5 hover:bg-gray-50 items-start">
                   <div className="col-span-4">
@@ -57,7 +58,7 @@ export default function MyTasks() {
                   <div className="col-span-3 text-sm text-indigo-600 font-medium">{projectName}</div>
                   <div className="col-span-2 text-sm text-gray-600">{t.deadline || '—'}</div>
                   <div className="col-span-2 text-right">
-                    <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{hours}h</span>
+                    <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{hours}</span>
                   </div>
                   <div className="col-span-1"></div>
                 </div>

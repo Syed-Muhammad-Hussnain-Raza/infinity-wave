@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import { userService } from '../../services/api';
+import type { User, Role } from '../../types';
 
-const ROLE_ORDER = ['ADMIN', 'MANAGER', 'AGENT'];
-const ROLE_LABELS: Record<string, string> = { ADMIN: 'Administrators', MANAGER: 'Managers', AGENT: 'Agents' };
-const ROLE_BADGE: Record<string, string> = {
+const ROLE_ORDER: Role[] = ['ADMIN', 'MANAGER', 'AGENT'];
+const ROLE_LABELS: Record<Role, string> = { ADMIN: 'Administrators', MANAGER: 'Managers', AGENT: 'Agents' };
+const ROLE_BADGE: Record<Role, string> = {
   ADMIN: 'text-red-600 bg-red-50 border border-red-200',
   MANAGER: 'text-blue-600 bg-blue-50 border border-blue-200',
   AGENT: 'text-green-600 bg-green-50 border border-green-200',
 };
 
 export default function TeamDirectory() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,8 +22,12 @@ export default function TeamDirectory() {
       .finally(() => setLoading(false));
   }, []);
 
-  const grouped: Record<string, any[]> = { ADMIN: [], MANAGER: [], AGENT: [] };
-  users.forEach(u => { if (grouped[u.role]) grouped[u.role].push(u); });
+  const grouped: Record<Role, User[]> = { ADMIN: [], MANAGER: [], AGENT: [] };
+  users.forEach(u => {
+    if (grouped[u.role]) {
+      grouped[u.role].push(u);
+    }
+  });
 
   return (
     <div>
@@ -52,7 +57,7 @@ export default function TeamDirectory() {
                   <div className="col-span-2 text-right">Role</div>
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {members.map((u: any) => (
+                  {members.map((u) => (
                     <div key={u.id} className="grid grid-cols-12 gap-4 px-5 py-3 hover:bg-gray-50 items-center">
                       <div className="col-span-3 flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">

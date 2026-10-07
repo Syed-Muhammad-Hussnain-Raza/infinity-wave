@@ -1,25 +1,34 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { transcriptService } from '../../services/api';
+import type { TranscriptProcessResponse } from '../../types';
 
 export default function CreateTranscript() {
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<TranscriptProcessResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!transcript.trim() || isProcessing) return;
-    setIsProcessing(true); setError(null);
+    setIsProcessing(true);
+    setError(null);
     try {
       const data = await transcriptService.process(transcript);
       setResult(data);
       setTranscript('');
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Failed to process transcript. Please check the backend is running.');
-    } finally { setIsProcessing(false); }
+    } catch (err: unknown) {
+      let msg = 'Failed to process transcript. Please check the backend is running.';
+      if (axios.isAxiosError(err) && err.response?.data?.detail) {
+        msg = err.response.data.detail;
+      }
+      setError(msg);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (result) {
@@ -27,7 +36,14 @@ export default function CreateTranscript() {
       <div>
         <div className="mb-6 pb-4 border-b border-gray-200">
           <h1 className="text-lg font-semibold text-gray-900">Transcript Processed</h1>
-          <p className="text-gray-500 text-sm mt-0.5">AI has extracted CRM data from your meeting notes</p>
+          <p className="text-gray-500 text-sm mt-0.5">
+            AI has extracted CRM data from your meeting notes
+            {result.ai_provider && (
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                Provider: {result.ai_provider}
+              </span>
+            )}
+          </p>
         </div>
 
         {/* Result stats */}
@@ -43,7 +59,7 @@ export default function CreateTranscript() {
         </div>
 
         {/* Projects table */}
-        {result.projects?.length > 0 && (
+        {result.projects && result.projects.length > 0 && (
           <div className="bg-white border border-gray-200 rounded overflow-hidden mb-6">
             <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
               <span className="text-sm font-semibold text-gray-700">Generated Projects</span>
@@ -53,16 +69,20 @@ export default function CreateTranscript() {
                 <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
                   <th className="text-left px-5 py-2.5 font-semibold">#</th>
                   <th className="text-left px-5 py-2.5 font-semibold">Project Name</th>
+                  <th className="text-left px-5 py-2.5 font-semibold">Client</th>
                   <th className="text-right px-5 py-2.5 font-semibold">Tasks</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {result.projects.map((p: any, i: number) => (
-                  <tr key={i} className="hover:bg-gray-50">
+                {result.projects.map((p, i) => (
+                  <tr key={p.id || i} className="hover:bg-gray-50">
                     <td className="px-5 py-3 text-gray-400 text-xs">{i + 1}</td>
                     <td className="px-5 py-3 font-medium text-gray-900">{p.name}</td>
+                    <td className="px-5 py-3 text-gray-600">{p.client_name}</td>
                     <td className="px-5 py-3 text-right">
-                      <span className="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded">{p.task_count ?? '—'}</span>
+                      <span className="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded">
+                        {p.task_count ?? '—'}
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -72,12 +92,14 @@ export default function CreateTranscript() {
         )}
 
         <div className="flex gap-3">
-          <button onClick={() => navigate('/projects')}
+          <button
+            onClick={() => navigate('/projects')}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-5 py-2 rounded transition-colors"
           >
             View All Projects →
           </button>
-          <button onClick={() => setResult(null)}
+          <button
+            onClick={() => setResult(null)}
             className="border border-gray-300 text-gray-600 hover:bg-gray-50 font-medium text-sm px-5 py-2 rounded transition-colors"
           >
             Process Another Transcript
@@ -91,7 +113,9 @@ export default function CreateTranscript() {
     <div>
       <div className="mb-6 pb-4 border-b border-gray-200">
         <h1 className="text-lg font-semibold text-gray-900">Create from Transcript</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Paste a meeting transcript to auto-generate projects, assign managers, and create tasks</p>
+        <p className="text-gray-500 text-sm mt-0.5">
+          Paste a meeting transcript to auto-generate projects, assign managers, and create tasks
+        </p>
       </div>
 
       {error && (
@@ -107,7 +131,7 @@ export default function CreateTranscript() {
           <ol className="list-decimal list-inside space-y-0.5 text-indigo-700 text-xs">
             <li>Paste the full meeting transcript (raw notes, action items, decisions)</li>
             <li>The AI identifies projects, assigns managers by name, and extracts tasks</li>
-            <li>Projects and tasks are saved to the CRM automatically</li>
+            <li>Projects and tasks are saved to the CRM automatically in a single atomic transaction</li>
           </ol>
         </div>
 
@@ -118,19 +142,8 @@ export default function CreateTranscript() {
           </div>
           <textarea
             value={transcript}
-            onChange={e => setTranscript(e.target.value)}
-            placeholder="Paste your full meeting transcript here...
-
-Example:
-Date: October 7, 2026 — Project Planning Meeting
-
-Attendees: Admin, Ayesha Khan, Bilal Ahmed, Ali Raza, Hamza Shah
-
-Ayesha will lead the UrbanCart e-commerce redesign project with a deadline of October 20th.
-- Ali Raza: Implement design system (8 hours, deadline Oct 10)
-- Hamza Shah: Checkout flow integration (12 hours, deadline Oct 15)
-
-Bilal will manage the QuickServe API migration project..."
+            onChange={(e) => setTranscript(e.target.value)}
+            placeholder="Paste your full meeting transcript here..."
             className="w-full h-80 px-4 py-3.5 text-sm font-mono leading-relaxed resize-none outline-none text-gray-800 placeholder:text-gray-400"
             disabled={isProcessing}
           />
