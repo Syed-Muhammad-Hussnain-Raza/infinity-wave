@@ -22,6 +22,7 @@ eggs/
 .eggs/
 lib/
 lib64/
+temp_auto_push.bat
 parts/
 sdist/
 var/
@@ -41,10 +42,11 @@ wheels/
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
 
 # OS
 .DS_Store
 Thumbs.db
+.gitignore
+branch_structure.json
