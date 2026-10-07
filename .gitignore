@@ -24,6 +24,7 @@ lib/
 lib64/
 parts/
 sdist/
+temp_auto_push.bat
 var/
 wheels/
 *.egg-info/
@@ -41,7 +42,6 @@ wheels/
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
 
@@ -52,3 +52,5 @@ Thumbs.db
 # Challenge Reference Documents
 *.pdf
 *Template*.md
+.gitignore
+branch_structure.json
