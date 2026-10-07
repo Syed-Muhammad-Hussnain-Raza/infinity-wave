@@ -158,6 +158,10 @@ def run_tests():
 
     run_seed()
     db: Session = SessionLocal()
+    db.query(Task).delete()
+    db.query(Project).delete()
+    db.query(Transcript).delete()
+    db.commit()
 
     # User lookups
     ayesha = db.query(User).filter(User.email == "ayesha@novaworks.example").first()

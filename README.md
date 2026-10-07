@@ -487,13 +487,14 @@ npm run build
 
 ### Infrastructure Target
 
-- **Backend**: Render
+- **Backend**: Render (`https://infinity-wave-api.onrender.com`)
 - **Database**: Supabase PostgreSQL
-- **Frontend**: [TO BE ADDED]
+- **Frontend**: Vercel (`https://infinity-wave-bice.vercel.app`)
 
 ### Live Links
 
-- **Live Demo**: [TO BE ADDED]
+- **Live Demo**: [https://infinity-wave-bice.vercel.app/](https://infinity-wave-bice.vercel.app/)
+- **API Documentation**: [https://infinity-wave-api.onrender.com/docs](https://infinity-wave-api.onrender.com/docs)
 - **Demo Video**: [TO BE ADDED]
 
 ---

@@ -55,11 +55,14 @@ Your task is to analyze meeting transcripts and extract structured Projects and 
 
 def is_transient_error(error: Exception) -> bool:
     """Determine if an exception represents a transient provider failure
-    (503, 429, timeout, connection error, temporary service unavailable).
+    (503, 429, timeout, connection error, temporary service unavailable, or malformed JSON).
     Explicitly returns False for Pydantic validation errors or invalid data.
     """
     if isinstance(error, ValidationError):
         return False
+
+    if isinstance(error, (json.JSONDecodeError, ValueError)):
+        return True
 
     status_code = getattr(error, "code", getattr(error, "status_code", None))
     if status_code in (503, 429, 502, 504):
@@ -79,6 +82,23 @@ def is_transient_error(error: Exception) -> bool:
         return True
 
     return False
+
+
+def _clean_and_parse_json(raw_text: str) -> dict:
+    """Extract and parse JSON safely from LLM output, removing markdown fences."""
+    text = raw_text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    text = text.strip()
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        text = text[start : end + 1]
+    return json.loads(text)
 
 
 class AIService:
@@ -153,7 +173,8 @@ class AIService:
         if not response or not response.text:
             raise ValueError("Empty response received from Gemini.")
 
-        return AIExtractedOutput.model_validate_json(response.text)
+        parsed_data = _clean_and_parse_json(response.text)
+        return AIExtractedOutput.model_validate(parsed_data)
 
     def _call_groq(self, directory_text: str, transcript_text: str) -> AIExtractedOutput:
         """Call fallback provider (Groq) using strict JSON Schema."""
@@ -199,7 +220,8 @@ class AIService:
             raise ValueError("Empty response received from Groq.")
 
         content = completion.choices[0].message.content
-        return AIExtractedOutput.model_validate_json(content)
+        parsed_data = _clean_and_parse_json(content)
+        return AIExtractedOutput.model_validate(parsed_data)
 
     def parse_meeting_transcript(
         self,

@@ -17,7 +17,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
 
     # CORS
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
+    ALLOWED_ORIGINS: str = (
+        "http://localhost:3000,http://localhost:5173,"
+        "http://127.0.0.1:3000,http://127.0.0.1:5173,"
+        "https://infinity-wave-bice.vercel.app,"
+        "https://infinity-wave-api.onrender.com"
+    )
 
     # AI Integration - Primary Provider (Google Gemini API directly)
     GEMINI_API_KEY: str = ""
@@ -31,7 +36,13 @@ class Settings(BaseSettings):
     def cors_origins(self) -> List[str]:
         if not self.ALLOWED_ORIGINS:
             return ["*"]
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
+        origins = set()
+        for origin in self.ALLOWED_ORIGINS.split(","):
+            cleaned = origin.strip().rstrip("/")
+            if cleaned:
+                origins.add(cleaned)
+                origins.add(f"{cleaned}/")
+        return list(origins) if origins else ["*"]
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env"),

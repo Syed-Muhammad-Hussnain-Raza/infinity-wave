@@ -16,6 +16,20 @@ def test_flow():
         res_p = client.get("/api/projects", headers={"Authorization": f"Bearer {admin_token}"})
         assert res_p.status_code == 200
         projects = res_p.json()
+        if len(projects) == 0:
+            print("  Ingesting challenge transcript...")
+            with open("backend/tests/challenge_transcript.txt", "r", encoding="utf-8") as f:
+                transcript_text = f.read()
+            res_trans = client.post(
+                "/api/transcripts/process",
+                json={"transcript": transcript_text},
+                headers={"Authorization": f"Bearer {admin_token}"},
+                timeout=60.0,
+            )
+            assert res_trans.status_code == 200, res_trans.text
+            res_p = client.get("/api/projects", headers={"Authorization": f"Bearer {admin_token}"})
+            projects = res_p.json()
+
         print(f"[2] Admin Projects count: {len(projects)}")
         assert len(projects) == 3
         for p in projects:

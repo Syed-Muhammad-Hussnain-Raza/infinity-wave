@@ -15,6 +15,11 @@ def parse_and_validate_date(date_str: Optional[str]) -> Optional[date]:
     if not date_str or not date_str.strip():
         return None
     cleaned = date_str.strip()
+    if len(cleaned) >= 10 and cleaned[:10].count("-") == 2:
+        try:
+            return datetime.strptime(cleaned[:10], "%Y-%m-%d").date()
+        except ValueError:
+            pass
     for fmt in ("%Y-%m-%d", "%d %B %Y", "%d %b %Y", "%Y/%m/%d", "%m/%d/%Y"):
         try:
             return datetime.strptime(cleaned, fmt).date()
