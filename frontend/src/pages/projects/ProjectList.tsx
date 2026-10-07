@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { projectService } from '../../services/api';
-import { FolderKanban, Calendar, User, ListTodo, AlertCircle } from 'lucide-react';
 
-export default function ProjectList({ title = 'Projects' }: { title?: string }) {
+export default function ProjectList({ title = 'All Projects' }: { title?: string }) {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,62 +14,61 @@ export default function ProjectList({ title = 'Projects' }: { title?: string }) 
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[1,2,3].map(i => (
-        <div key={i} className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 animate-pulse h-48" />
-      ))}
-    </div>
-  );
-
-  if (error) return (
-    <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-100 flex items-center gap-2">
-      <AlertCircle size={18} /> {error}
-    </div>
-  );
-
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-        <FolderKanban className="text-[#aa3bff]" /> {title}
-      </h1>
-
-      {projects.length === 0 ? (
-        <div className="bg-white dark:bg-slate-800 p-12 text-center rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
-          <FolderKanban size={40} className="text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500 font-medium">No projects yet.</p>
-          <p className="text-slate-400 text-sm mt-1">An admin can create projects from a meeting transcript.</p>
+      <div className="mb-6 pb-4 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+          <p className="text-gray-500 text-sm mt-0.5">
+            {loading ? 'Loading...' : `${projects.length} project${projects.length !== 1 ? 's' : ''}`}
+          </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((p: any) => (
-            <Link
-              key={p.id}
-              to={`/projects/${p.id}`}
-              className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-[#aa3bff]/50 hover:-translate-y-0.5 hover:shadow-md transition-all block"
-            >
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1 truncate">{p.name}</h2>
-              <p className="text-sm font-medium text-slate-400 mb-5">{p.client}</p>
+      </div>
 
-              <div className="space-y-2.5 text-sm text-slate-600 dark:text-slate-400">
-                <div className="flex items-center gap-2.5">
-                  <User size={15} className="text-slate-400 shrink-0" />
-                  <span className="truncate">{p.manager?.name || p.manager || '—'}</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Calendar size={15} className="text-slate-400 shrink-0" />
-                  <span>{p.deadline || '—'}</span>
-                </div>
-              </div>
+      <div className="bg-white border border-gray-200 rounded overflow-hidden">
+        {/* Table header */}
+        <div className="grid grid-cols-12 gap-4 px-5 py-2.5 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <div className="col-span-4">Project Name</div>
+          <div className="col-span-2">Client</div>
+          <div className="col-span-3">Manager</div>
+          <div className="col-span-2">Deadline</div>
+          <div className="col-span-1 text-right">Tasks</div>
+        </div>
 
-              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2 text-sm font-semibold text-[#aa3bff]">
-                <ListTodo size={15} />
-                {p.task_count ?? 0} Tasks
-              </div>
+        {loading ? (
+          <div className="divide-y divide-gray-100">
+            {[1,2,3,4].map(i => <div key={i} className="h-12 px-5 py-3 animate-pulse"><div className="h-4 bg-gray-100 rounded w-2/3" /></div>)}
+          </div>
+        ) : error ? (
+          <div className="px-5 py-8 text-center text-red-600 text-sm">{error}</div>
+        ) : projects.length === 0 ? (
+          <div className="px-5 py-12 text-center">
+            <p className="text-gray-600 font-medium mb-1">No projects found</p>
+            <p className="text-gray-400 text-sm">Generate projects from a meeting transcript first.</p>
+            <Link to="/admin/transcript" className="inline-block mt-4 bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-indigo-700 transition-colors">
+              Create from Transcript →
             </Link>
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {projects.map((p: any) => (
+              <Link
+                key={p.id}
+                to={`/projects/${p.id}`}
+                className="grid grid-cols-12 gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors items-center"
+              >
+                <div className="col-span-4 font-medium text-gray-900 hover:text-indigo-600 truncate">{p.name}</div>
+                <div className="col-span-2 text-gray-600 text-sm truncate">{p.client || '—'}</div>
+                <div className="col-span-3 text-gray-600 text-sm truncate">{p.manager?.name || p.manager || '—'}</div>
+                <div className="col-span-2 text-gray-600 text-sm">{p.deadline || '—'}</div>
+                <div className="col-span-1 text-right">
+                  <span className="text-xs font-semibold bg-indigo-50 text-indigo-700 px-2 py-1 rounded">{p.task_count ?? 0}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

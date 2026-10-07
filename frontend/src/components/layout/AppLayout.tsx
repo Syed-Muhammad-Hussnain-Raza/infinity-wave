@@ -1,69 +1,100 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, LayoutDashboard, FileText, Users, FolderKanban, CheckSquare } from 'lucide-react';
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
-  const location = useLocation();
-
+  const { pathname } = useLocation();
   if (!user) return null;
 
-  const navItems = [
-    { name: 'Dashboard', path: `/${user.role.toLowerCase()}`, icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER'] },
-    { name: 'My Tasks', path: '/my-tasks', icon: CheckSquare, roles: ['AGENT'] },
-    { name: 'Transcript', path: '/admin/transcript', icon: FileText, roles: ['ADMIN'] },
-    { name: 'Projects', path: '/projects', icon: FolderKanban, roles: ['ADMIN', 'MANAGER'] },
-    { name: 'Team', path: '/team', icon: Users, roles: ['ADMIN'] },
-  ].filter(item => item.roles.includes(user.role));
+  const navGroups = [
+    {
+      label: null,
+      items: [
+        { name: 'Dashboard', path: '/admin', roles: ['ADMIN'] },
+        { name: 'My Projects', path: '/manager', roles: ['MANAGER'] },
+        { name: 'My Tasks', path: '/my-tasks', roles: ['AGENT'] },
+      ]
+    },
+    {
+      label: 'Management',
+      items: [
+        { name: 'Create from Transcript', path: '/admin/transcript', roles: ['ADMIN'] },
+        { name: 'All Projects', path: '/projects', roles: ['ADMIN', 'MANAGER'] },
+        { name: 'Team Directory', path: '/team', roles: ['ADMIN'] },
+      ]
+    }
+  ];
+
+  const roleColors: Record<string, string> = {
+    ADMIN: 'text-red-600 bg-red-50 border-red-200',
+    MANAGER: 'text-blue-600 bg-blue-50 border-blue-200',
+    AGENT: 'text-green-600 bg-green-50 border-green-200',
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 glass border-r border-slate-200 dark:border-slate-700 flex flex-col fixed inset-y-0 left-0 z-10">
-        <div className="p-6">
-          <h1 className="text-xl font-bold text-[#aa3bff]">NovaWorks</h1>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">{user.role}</p>
+    <div className="min-h-screen flex bg-gray-50">
+      {/* Sidebar */}
+      <aside className="w-56 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-20">
+        {/* Logo */}
+        <div className="px-4 h-14 flex items-center border-b border-gray-200">
+          <span className="text-indigo-600 font-bold text-base tracking-tight">NovaWorks</span>
+          <span className="ml-2 text-gray-400 text-xs font-medium">CRM</span>
         </div>
-        
-        <nav className="flex-1 px-4 space-y-1.5">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
+
+        {/* Nav */}
+        <nav className="flex-1 py-3 overflow-y-auto">
+          {navGroups.map((group, gi) => {
+            const items = group.items.filter(i => i.roles.includes(user.role));
+            if (items.length === 0) return null;
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  isActive 
-                    ? 'bg-[#aa3bff] text-white shadow-md shadow-[#aa3bff]/20' 
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Icon size={18} />
-                {item.name}
-              </Link>
+              <div key={gi} className="mb-1">
+                {group.label && (
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-4 py-2">{group.label}</p>
+                )}
+                {items.map(item => {
+                  const isActive = pathname === item.path || (item.path !== '/admin' && item.path !== '/manager' && item.path !== '/my-tasks' && pathname.startsWith(item.path));
+                  return (
+                    <Link
+                      key={item.path} to={item.path}
+                      className={`flex items-center px-4 py-2 text-sm transition-colors ${
+                        isActive
+                          ? 'bg-indigo-50 text-indigo-700 font-semibold border-r-2 border-indigo-600'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-          <div className="mb-4 px-2">
-            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user.name}</p>
-            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+        {/* User */}
+        <div className="border-t border-gray-200 p-3">
+          <div className="flex items-center gap-2.5 px-1 mb-2">
+            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold shrink-0">
+              {user.name.charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate leading-tight">{user.name}</p>
+              <span className={`text-[10px] font-semibold border px-1.5 py-0.5 rounded ${roleColors[user.role]}`}>
+                {user.role}
+              </span>
+            </div>
           </div>
-          <button 
-            onClick={logout}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+          <button onClick={logout}
+            className="w-full text-left px-2 py-1.5 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
           >
-            <LogOut size={16} />
-            Sign Out
+            Sign out
           </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 ml-64 p-8">
-        <div className="max-w-6xl mx-auto">
+      {/* Main content */}
+      <main className="flex-1 ml-56 min-h-screen">
+        <div className="max-w-5xl mx-auto px-8 py-7">
           <Outlet />
         </div>
       </main>

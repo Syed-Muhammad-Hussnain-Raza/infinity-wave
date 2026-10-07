@@ -1,66 +1,99 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, FolderKanban, Users, CheckSquare, ArrowRight } from 'lucide-react';
+import { projectService, userService } from '../../services/api';
 
 export default function AdminDashboard() {
+  const [projects, setProjects] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([projectService.getAll(), userService.getAll()])
+      .then(([p, u]) => { setProjects(Array.isArray(p) ? p : []); setUsers(Array.isArray(u) ? u : []); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const totalTasks = projects.reduce((sum, p) => sum + (p.task_count || 0), 0);
+
   return (
-    <div className="max-w-5xl">
-      <div className="flex justify-between items-center mb-8">
+    <div>
+      {/* Page header */}
+      <div className="mb-6 pb-4 border-b border-gray-200">
+        <h1 className="text-lg font-semibold text-gray-900">Admin Dashboard</h1>
+        <p className="text-gray-500 text-sm mt-0.5">NovaWorks CRM — workspace overview</p>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {[
+          { label: 'Total Projects', value: loading ? '—' : projects.length, sub: 'across all managers' },
+          { label: 'Total Tasks', value: loading ? '—' : totalTasks, sub: 'assigned to agents' },
+          { label: 'Team Members', value: loading ? '—' : users.length, sub: 'active accounts' },
+        ].map(stat => (
+          <div key={stat.label} className="bg-white border border-gray-200 rounded p-5">
+            <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+            <p className="text-sm font-medium text-gray-700 mt-0.5">{stat.label}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{stat.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Primary CTA */}
+      <div className="bg-indigo-600 rounded p-5 mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
-          <p className="text-slate-500 mt-2 font-medium">System overview and quick shortcuts</p>
+          <p className="text-white font-semibold text-base">Create Projects from Transcript</p>
+          <p className="text-indigo-200 text-sm mt-0.5">Paste a meeting transcript — AI will extract projects, assign managers, and create tasks automatically.</p>
         </div>
-        <Link to="/admin/transcript" className="bg-[#aa3bff] hover:bg-[#aa3bff]/90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-[#aa3bff]/20">
-          <Bot size={20} />
-          Create from Transcript
+        <Link to="/admin/transcript"
+          className="shrink-0 bg-white text-indigo-700 hover:bg-indigo-50 font-semibold text-sm px-5 py-2.5 rounded transition-colors"
+        >
+          Open Transcript →
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="glass p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="w-12 h-12 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center mb-5">
-            <FolderKanban size={24} />
+      {/* Recent Projects */}
+      <div className="bg-white border border-gray-200 rounded overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50">
+          <span className="text-sm font-semibold text-gray-700">Recent Projects</span>
+          <Link to="/projects" className="text-xs text-indigo-600 hover:underline font-medium">View all →</Link>
+        </div>
+        {loading ? (
+          <div className="divide-y divide-gray-100">
+            {[1,2,3].map(i => <div key={i} className="h-12 animate-pulse bg-gray-50 mx-5 my-2 rounded" />)}
           </div>
-          <div className="text-4xl font-bold text-slate-900 dark:text-white mb-2">3</div>
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Projects</div>
-        </div>
-        <div className="glass p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="w-12 h-12 rounded-xl bg-emerald-100/80 text-emerald-600 flex items-center justify-center mb-5">
-            <CheckSquare size={24} />
+        ) : projects.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <p className="text-gray-500 text-sm font-medium">No projects yet.</p>
+            <p className="text-gray-400 text-xs mt-1">Use the Transcript feature above to generate your first projects.</p>
           </div>
-          <div className="text-4xl font-bold text-slate-900 dark:text-white mb-2">12</div>
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Tasks</div>
-        </div>
-        <div className="glass p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="w-12 h-12 rounded-xl bg-[#aa3bff]/10 text-[#aa3bff] flex items-center justify-center mb-5">
-            <Users size={24} />
-          </div>
-          <div className="text-4xl font-bold text-slate-900 dark:text-white mb-2">5</div>
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Team Members</div>
-        </div>
-      </div>
-
-      <div className="glass rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Quick Navigation</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Link to="/projects" className="p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 flex items-center justify-between transition-all shadow-sm group">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg group-hover:bg-[#aa3bff]/10 transition-colors">
-                <FolderKanban className="text-slate-500 group-hover:text-[#aa3bff] transition-colors" size={20} />
-              </div>
-              <span className="font-bold text-slate-700 dark:text-slate-200">View All Projects</span>
-            </div>
-            <ArrowRight size={18} className="text-slate-400 group-hover:text-[#aa3bff] transition-transform group-hover:translate-x-1" />
-          </Link>
-          <Link to="/team" className="p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 flex items-center justify-between transition-all shadow-sm group">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg group-hover:bg-[#aa3bff]/10 transition-colors">
-                <Users className="text-slate-500 group-hover:text-[#aa3bff] transition-colors" size={20} />
-              </div>
-              <span className="font-bold text-slate-700 dark:text-slate-200">Manage Team Directory</span>
-            </div>
-            <ArrowRight size={18} className="text-slate-400 group-hover:text-[#aa3bff] transition-transform group-hover:translate-x-1" />
-          </Link>
-        </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                <th className="text-left px-5 py-2.5 font-semibold">Project</th>
+                <th className="text-left px-5 py-2.5 font-semibold">Client</th>
+                <th className="text-left px-5 py-2.5 font-semibold">Manager</th>
+                <th className="text-left px-5 py-2.5 font-semibold">Deadline</th>
+                <th className="text-right px-5 py-2.5 font-semibold">Tasks</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {projects.slice(0, 5).map((p: any) => (
+                <tr key={p.id} className="hover:bg-gray-50">
+                  <td className="px-5 py-3 font-medium text-gray-900">
+                    <Link to={`/projects/${p.id}`} className="hover:text-indigo-600">{p.name}</Link>
+                  </td>
+                  <td className="px-5 py-3 text-gray-600">{p.client || '—'}</td>
+                  <td className="px-5 py-3 text-gray-600">{p.manager?.name || p.manager || '—'}</td>
+                  <td className="px-5 py-3 text-gray-600">{p.deadline || '—'}</td>
+                  <td className="px-5 py-3 text-right">
+                    <span className="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded">{p.task_count ?? 0}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

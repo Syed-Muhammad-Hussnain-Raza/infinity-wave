@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, FileText, CheckCircle2, ArrowRight, Loader2, FolderKanban } from 'lucide-react';
 import { transcriptService } from '../../services/api';
 
 export default function CreateTranscript() {
@@ -13,136 +12,136 @@ export default function CreateTranscript() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!transcript.trim() || isProcessing) return;
-
-    setIsProcessing(true);
-    setError(null);
-
+    setIsProcessing(true); setError(null);
     try {
       const data = await transcriptService.process(transcript);
       setResult(data);
       setTranscript('');
     } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Failed to process transcript. Please try again.';
-      setError(msg);
-    } finally {
-      setIsProcessing(false);
-    }
+      setError(err?.response?.data?.detail || 'Failed to process transcript. Please check the backend is running.');
+    } finally { setIsProcessing(false); }
   };
 
   if (result) {
     return (
-      <div className="max-w-3xl mx-auto mt-8">
-        <div className="bg-white dark:bg-slate-800 p-10 rounded-2xl text-center border border-green-200 dark:border-green-900/40 shadow-sm">
-          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 size={32} />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Analysis Complete!</h2>
-          <p className="text-slate-500 mb-10">The AI has converted your meeting notes into projects and tasks.</p>
+      <div>
+        <div className="mb-6 pb-4 border-b border-gray-200">
+          <h1 className="text-lg font-semibold text-gray-900">Transcript Processed</h1>
+          <p className="text-gray-500 text-sm mt-0.5">AI has extracted CRM data from your meeting notes</p>
+        </div>
 
-          <div className="grid grid-cols-2 gap-6 mb-10">
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
-              <div className="text-5xl font-bold text-[#aa3bff] mb-2">{result.projects_created}</div>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Projects Created</div>
-            </div>
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
-              <div className="text-5xl font-bold text-[#aa3bff] mb-2">{result.tasks_created}</div>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tasks Assigned</div>
-            </div>
+        {/* Result stats */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-white border border-gray-200 rounded p-6 text-center">
+            <p className="text-4xl font-bold text-indigo-600 mb-1">{result.projects_created}</p>
+            <p className="text-sm font-semibold text-gray-700">Projects Created</p>
           </div>
+          <div className="bg-white border border-gray-200 rounded p-6 text-center">
+            <p className="text-4xl font-bold text-indigo-600 mb-1">{result.tasks_created}</p>
+            <p className="text-sm font-semibold text-gray-700">Tasks Assigned</p>
+          </div>
+        </div>
 
-          {result.projects && result.projects.length > 0 && (
-            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-6 text-left mb-8 border border-slate-200 dark:border-slate-700">
-              <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Generated Projects</h3>
-              <ul className="space-y-3">
+        {/* Projects table */}
+        {result.projects?.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded overflow-hidden mb-6">
+            <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
+              <span className="text-sm font-semibold text-gray-700">Generated Projects</span>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                  <th className="text-left px-5 py-2.5 font-semibold">#</th>
+                  <th className="text-left px-5 py-2.5 font-semibold">Project Name</th>
+                  <th className="text-right px-5 py-2.5 font-semibold">Tasks</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
                 {result.projects.map((p: any, i: number) => (
-                  <li key={i} className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-700/50 last:border-0">
-                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      <FolderKanban size={16} className="text-[#aa3bff]" />
-                      {p.name}
-                    </span>
-                    {p.task_count != null && (
-                      <span className="text-xs font-medium text-slate-600 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700">
-                        {p.task_count} tasks
-                      </span>
-                    )}
-                  </li>
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-5 py-3 text-gray-400 text-xs">{i + 1}</td>
+                    <td className="px-5 py-3 font-medium text-gray-900">{p.name}</td>
+                    <td className="px-5 py-3 text-right">
+                      <span className="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded">{p.task_count ?? '—'}</span>
+                    </td>
+                  </tr>
                 ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={() => navigate('/projects')}
-              className="bg-[#aa3bff] hover:bg-[#aa3bff]/90 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-lg shadow-[#aa3bff]/20"
-            >
-              View Projects <ArrowRight size={18} />
-            </button>
-            <button
-              onClick={() => setResult(null)}
-              className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-medium px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors"
-            >
-              Process another
-            </button>
+              </tbody>
+            </table>
           </div>
+        )}
+
+        <div className="flex gap-3">
+          <button onClick={() => navigate('/projects')}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-5 py-2 rounded transition-colors"
+          >
+            View All Projects →
+          </button>
+          <button onClick={() => setResult(null)}
+            className="border border-gray-300 text-gray-600 hover:bg-gray-50 font-medium text-sm px-5 py-2 rounded transition-colors"
+          >
+            Process Another Transcript
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-          <div className="p-2.5 bg-[#aa3bff]/10 rounded-xl">
-            <Bot className="text-[#aa3bff]" size={28} />
-          </div>
-          Create from Transcript
-        </h1>
-        <p className="text-slate-500 mt-3 text-lg leading-relaxed">
-          Paste your raw meeting notes below. The AI will automatically extract projects, assign managers, and break down deliverables into tasks.
-        </p>
+    <div>
+      <div className="mb-6 pb-4 border-b border-gray-200">
+        <h1 className="text-lg font-semibold text-gray-900">Create from Transcript</h1>
+        <p className="text-gray-500 text-sm mt-0.5">Paste a meeting transcript to auto-generate projects, assign managers, and create tasks</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-lg text-sm mb-6 border border-red-100 dark:border-red-900/30">
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded mb-5">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <div className="p-6">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-            <FileText size={16} className="text-[#aa3bff]" />
-            Meeting Transcript Input
-          </div>
+      <form onSubmit={handleSubmit}>
+        {/* Instructions */}
+        <div className="bg-indigo-50 border border-indigo-200 rounded p-4 mb-4 text-sm text-indigo-800">
+          <p className="font-semibold mb-1">How it works</p>
+          <ol className="list-decimal list-inside space-y-0.5 text-indigo-700 text-xs">
+            <li>Paste the full meeting transcript (raw notes, action items, decisions)</li>
+            <li>The AI identifies projects, assigns managers by name, and extracts tasks</li>
+            <li>Projects and tasks are saved to the CRM automatically</li>
+          </ol>
+        </div>
 
+        <div className="bg-white border border-gray-300 rounded overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Meeting Transcript</span>
+            <span className="text-xs text-gray-400">{transcript.length} characters</span>
+          </div>
           <textarea
             value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-            placeholder={`Paste meeting transcript here...\n\nExample:\n"In today's meeting, Ayesha agreed to lead the UrbanCart redesign project with a deadline of October 20th. Ali will handle the design system and checkout flow..."`}
-            className="w-full h-[400px] p-5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#aa3bff] focus:border-[#aa3bff] outline-none transition-all resize-none font-mono text-sm leading-relaxed"
+            onChange={e => setTranscript(e.target.value)}
+            placeholder="Paste your full meeting transcript here...
+
+Example:
+Date: October 7, 2026 — Project Planning Meeting
+
+Attendees: Admin, Ayesha Khan, Bilal Ahmed, Ali Raza, Hamza Shah
+
+Ayesha will lead the UrbanCart e-commerce redesign project with a deadline of October 20th.
+- Ali Raza: Implement design system (8 hours, deadline Oct 10)
+- Hamza Shah: Checkout flow integration (12 hours, deadline Oct 15)
+
+Bilal will manage the QuickServe API migration project..."
+            className="w-full h-80 px-4 py-3.5 text-sm font-mono leading-relaxed resize-none outline-none text-gray-800 placeholder:text-gray-400"
             disabled={isProcessing}
           />
-
-          <div className="mt-6 flex items-center justify-between">
-            <p className="text-xs text-slate-400">{transcript.length > 0 ? `${transcript.length} characters` : 'Minimum ~100 characters recommended'}</p>
+          <div className="flex items-center justify-end px-4 py-3 bg-gray-50 border-t border-gray-200 gap-3">
+            <span className="text-xs text-gray-400">Minimum ~100 characters recommended</span>
             <button
               type="submit"
               disabled={isProcessing || !transcript.trim()}
-              className="bg-[#aa3bff] hover:bg-[#aa3bff]/90 text-white px-8 py-3.5 rounded-xl font-semibold flex items-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-[#aa3bff]/20"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-5 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  Analyzing Transcript...
-                </>
-              ) : (
-                <>
-                  Generate CRM Data
-                  <ArrowRight size={20} />
-                </>
-              )}
+              {isProcessing ? 'Analyzing transcript...' : 'Generate CRM Data →'}
             </button>
           </div>
         </div>
