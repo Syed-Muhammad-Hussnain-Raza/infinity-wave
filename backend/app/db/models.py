@@ -1,5 +1,6 @@
 import enum
 from datetime import datetime
+from typing import Optional
 from sqlalchemy import (
     Column,
     Integer,
@@ -39,7 +40,6 @@ class User(Base):
         "Project",
         back_populates="manager",
         foreign_keys="Project.manager_id",
-        cascade="all, delete-orphan",
     )
     # One agent can have many tasks across projects
     assigned_tasks = relationship(
@@ -54,7 +54,7 @@ class Project(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, index=True)
-    client_name = Column(String(255), nullable=True)
+    client_name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     manager_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     deadline = Column(String(100), nullable=True)
@@ -72,6 +72,10 @@ class Project(Base):
         cascade="all, delete-orphan",
         order_by="Task.id",
     )
+
+    @property
+    def task_count(self) -> int:
+        return len(self.tasks) if self.tasks else 0
 
 
 class Task(Base):
@@ -97,6 +101,10 @@ class Task(Base):
         back_populates="assigned_tasks",
         foreign_keys=[assignee_id],
     )
+
+    @property
+    def project_name(self) -> Optional[str]:
+        return self.project.name if self.project else None
 
 
 class Transcript(Base):
