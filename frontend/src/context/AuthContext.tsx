@@ -60,9 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       else if (returnedUser.role === 'MANAGER') navigate('/manager');
       else navigate('/my-tasks');
     } catch (err: unknown) {
-      let msg = 'Invalid credentials. Please try again.';
-      if (axios.isAxiosError(err) && err.response?.data?.detail) {
-        msg = err.response.data.detail;
+      let msg = 'Failed to connect to server. Please try again.';
+      if (axios.isAxiosError(err)) {
+        if (err.response?.data?.detail) {
+          msg = err.response.data.detail;
+        } else if (err.response?.status === 401) {
+          msg = 'Invalid credentials. Please check your email and password.';
+        } else if (!err.response) {
+          msg = 'Network error: Unable to connect to backend server. Check API URL and CORS.';
+        }
       }
       setError(msg);
     } finally {
