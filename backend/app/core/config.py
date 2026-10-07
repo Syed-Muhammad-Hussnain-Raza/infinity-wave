@@ -36,13 +36,12 @@ class Settings(BaseSettings):
     def cors_origins(self) -> List[str]:
         if not self.ALLOWED_ORIGINS:
             return ["*"]
-        origins = set()
+        origins = []
         for origin in self.ALLOWED_ORIGINS.split(","):
             cleaned = origin.strip().rstrip("/")
-            if cleaned:
-                origins.add(cleaned)
-                origins.add(f"{cleaned}/")
-        return list(origins) if origins else ["*"]
+            if cleaned and cleaned not in origins:
+                origins.append(cleaned)
+        return origins if origins else ["*"]
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env"),
