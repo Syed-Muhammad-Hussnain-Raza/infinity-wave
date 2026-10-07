@@ -18,7 +18,8 @@ async def lifespan(app: FastAPI):
     init_db()
     db = SessionLocal()
     try:
-        seed_users(db)
+        created = seed_users(db)
+        print(f"[Startup] Database initialized. Seeded {created} demo account(s).")
     finally:
         db.close()
     yield
