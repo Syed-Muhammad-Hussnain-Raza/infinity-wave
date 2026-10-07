@@ -42,6 +42,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Health endpoint
 @app.get("/health", tags=["Health"])
 def health_check():
@@ -49,7 +50,7 @@ def health_check():
         "status": "ok",
         "app": settings.PROJECT_NAME,
         "environment": settings.ENVIRONMENT,
-        "version": "1.0.0"
+        "version": "1.0.0",
     }
 
 
