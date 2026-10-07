@@ -9,10 +9,14 @@ import ProjectList from './pages/projects/ProjectList';
 import ProjectDetail from './pages/projects/ProjectDetail';
 import MyTasks from './pages/agent/MyTasks';
 
-function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
-  const { user } = useAuth();
+function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
+  const { user, isInitializing } = useAuth();
+  if (isInitializing) return null; // Wait for session restore
   if (!user) return <Navigate to="/login" replace />;
-  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to={`/${user.role.toLowerCase()}`} replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    const redirectPath = user.role === 'ADMIN' ? '/admin' : user.role === 'MANAGER' ? '/manager' : '/my-tasks';
+    return <Navigate to={redirectPath} replace />;
+  }
   return <>{children}</>;
 }
 
@@ -21,16 +25,16 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
-      
+
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/transcript" element={<ProtectedRoute allowedRoles={['ADMIN']}><CreateTranscript /></ProtectedRoute>} />
-        
-        {/* Manager dashboard is just the project list scoped to them via backend API */}
-        <Route path="/manager" element={<ProtectedRoute allowedRoles={['MANAGER']}><ProjectList title="Manager Dashboard" /></ProtectedRoute>} />
-        
+
+        {/* Manager dashboard: same ProjectList component, backend scopes the data by role */}
+        <Route path="/manager" element={<ProtectedRoute allowedRoles={['MANAGER']}><ProjectList title="My Projects" /></ProtectedRoute>} />
+
         <Route path="/my-tasks" element={<ProtectedRoute allowedRoles={['AGENT']}><MyTasks /></ProtectedRoute>} />
-        
+
         <Route path="/team" element={<ProtectedRoute allowedRoles={['ADMIN']}><TeamDirectory /></ProtectedRoute>} />
         <Route path="/projects" element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}><ProjectList /></ProtectedRoute>} />
         <Route path="/projects/:id" element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}><ProjectDetail /></ProtectedRoute>} />
