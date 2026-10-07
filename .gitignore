@@ -19,6 +19,7 @@ lib64/
 parts/
 sdist/
 var/
+temp_auto_push.bat
 wheels/
 *.egg-info/
 .installed.cfg
@@ -35,10 +36,11 @@ wheels/
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
 
 # OS
 .DS_Store
 Thumbs.db
+.gitignore
+branch_structure.json
