@@ -37,8 +37,6 @@ wheels/
 *.sqlite3
 
 # Environment variables
-.env
-.env.local
 
 # IDE
 .idea/
@@ -52,5 +50,4 @@ Thumbs.db
 # Challenge Reference Documents
 *.pdf
 *Template*.md
-.gitignore
-branch_structure.json
+config.bat
