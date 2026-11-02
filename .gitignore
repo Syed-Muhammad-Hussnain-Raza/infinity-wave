@@ -52,5 +52,3 @@ Thumbs.db
 # Challenge Reference Documents
 *.pdf
 *Template*.md
-.gitignore
-branch_structure.json
